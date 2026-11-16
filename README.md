@@ -89,3 +89,24 @@ Put this code into your [home-manager](https://github.com/nix-community/home-man
 ## Usage
 
 When the service is enabled and running it should simply work, there is nothing for you to do.
+
+### Surviving browser binary renames
+
+Shortcuts store the browser command by name, e.g. `Exec=brave --app-id=…`. When nixpkgs renames
+the binary (Brave went from `brave` to `brave-stable`), every existing shortcut breaks. Tell the
+service which package each shortcut prefix belongs to:
+
+```nix
+{ pkgs, ... }:
+{
+  services.chrome-pwa.browsers = {
+    brave = pkgs.brave;          # brave-<app-id>-<profile>.desktop
+    chrome = pkgs.google-chrome; # chrome-<app-id>-<profile>.desktop
+  };
+}
+```
+
+On every start the service rewrites the command of all matching shortcuts to the package's
+`meta.mainProgram`. A rename changes the service script, so the switch that installs the renamed
+browser restarts the service. If your setup does not restart user services on switch, run
+`systemctl --user restart auto-fix-chrome-pwa.service` or log in again.
